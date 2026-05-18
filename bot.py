@@ -11,7 +11,7 @@ DISCORD_BOT_TOKEN = os.getenv('DISCORD_BOT_TOKEN')
 
 CHARACTER_FILE = 'characters.json'
 
-# --- BIBLIOTECAS ---
+# --- Dicionario ---
 BUFF_LIBRARY = {
     "benção":           {"tipo": "ataque",      "bonus": 1,  "duracao": 99,  "desc": "+1 Ataque (Cena)"},
     "oração":           {"tipo": "ataque",      "bonus": 2,  "duracao": 99,  "desc": "+2 Ataque/Resist (Cena)"},
@@ -55,6 +55,7 @@ def save_data(data_to_save):
 data = load_data()
 
 # --- BOT ---
+# Define as permissões do bot
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
@@ -70,12 +71,15 @@ async def sync(ctx):
     await ctx.send(f'✅ {len(synced)} comandos sincronizados!')
 
 # --- MESTRE ---
+
+# Função que define um mestre que vai ter permissões para passar rodadas
 @bot.tree.command(name='set_mestre', description='Define o mestre')
 async def set_mestre(interaction: discord.Interaction):
     data["master_id"] = interaction.user.id
     save_data(data)
     await interaction.response.send_message(f"👑 **{interaction.user.name}** é o Mestre!")
 
+# Função para a pessoa que usou o comanod Set_mestre sair do cargo do mestre
 @bot.tree.command(name='sair_mestre', description='Abdica do cargo')
 async def sair_mestre(interaction: discord.Interaction):
     if data.get("master_id") != interaction.user.id:
@@ -84,6 +88,7 @@ async def sair_mestre(interaction: discord.Interaction):
     save_data(data)
     await interaction.response.send_message("🏳️ O Mestre saiu.")
 
+# Função para passar a rodada kekw
 @bot.tree.command(name='passar_rodada', description='Passa a rodada')
 async def proxima(interaction: discord.Interaction):
     if data.get("master_id") != interaction.user.id:
@@ -111,6 +116,8 @@ async def proxima(interaction: discord.Interaction):
     await interaction.response.send_message(msg)
 
 # --- JOGADOR ---
+
+# Função para criar personagem de acordo com o UID
 @bot.tree.command(name='criarpersonagem', description='Cria um novo personagem')
 async def criar(interaction: discord.Interaction, nome: str):
     uid = str(interaction.user.id)
@@ -125,6 +132,7 @@ async def criar(interaction: discord.Interaction, nome: str):
     save_data(data)
     await interaction.response.send_message(f'✅ **{nome}** criado e definido como personagem ativo!')
 
+# Função para trocar entre os personagens salvos da pessoa que usou o comando 
 @bot.tree.command(name='trocarpersonagem', description='Alterna entre seus personagens')
 async def switch(interaction: discord.Interaction, nome: str):
     uid = str(interaction.user.id)
@@ -135,6 +143,7 @@ async def switch(interaction: discord.Interaction, nome: str):
     else:
         await interaction.response.send_message(f'❌ Personagem **{nome}** não encontrado.', ephemeral=True)
 
+# Função Definir os atributos do personagem ativo 
 @bot.tree.command(name='definir_atributos', description='Define os atributos do personagem ativo')
 async def def_attr(interaction: discord.Interaction, força: int, destreza: int, constituição: int, inteligência: int, sabedoria: int, carisma: int):
     uid = str(interaction.user.id)
@@ -148,6 +157,7 @@ async def def_attr(interaction: discord.Interaction, força: int, destreza: int,
     save_data(data)
     await interaction.response.send_message(f"✅ Atributos de **{char_n}** atualizados!")
 
+# Função aplicar buffs do dicionario no personagem ativo
 @bot.tree.command(name='aplicarbuff', description='Aplica um buff ao personagem ativo')
 async def b_app(interaction: discord.Interaction, nome: str):
     uid = str(interaction.user.id)
@@ -164,6 +174,7 @@ async def b_app(interaction: discord.Interaction, nome: str):
     save_data(data)
     await interaction.response.send_message(f"✨ **{char_n}** recebeu: {lib['desc']}")
 
+# Função para aplicar os debbuffs do dicionario no personagem ativo
 @bot.tree.command(name='aplicardebuff', description='Aplica um debuff ao personagem ativo')
 async def d_app(interaction: discord.Interaction, nome: str):
     uid = str(interaction.user.id)
@@ -180,6 +191,7 @@ async def d_app(interaction: discord.Interaction, nome: str):
     save_data(data)
     await interaction.response.send_message(f"💀 **{char_n}** recebeu: {lib['desc']}")
 
+# Função para remover os buffs e debuffs
 @bot.tree.command(name='limpar_efeitos', description='Remove todos os buffs/debuffs do personagem ativo')
 async def clean(interaction: discord.Interaction):
     uid = str(interaction.user.id)
@@ -190,6 +202,7 @@ async def clean(interaction: discord.Interaction):
     save_data(data)
     await interaction.response.send_message(f"🧹 Efeitos de **{char_n}** limpos!")
 
+# Função para rolar os dados de ataque com os bufss e base_ataque
 @bot.tree.command(name='atacar', description='Rola ataque com bônus de buffs')
 async def at(interaction: discord.Interaction):
     uid = str(interaction.user.id)
@@ -201,6 +214,7 @@ async def at(interaction: discord.Interaction):
     bonus = sum(b['bonus'] for b in char['buffs'] if b['tipo'] == 'ataque') + char.get('base_ataque', 0)
     await interaction.response.send_message(f"🎲 **{char['nome']}**: {dado} + {bonus} = **{dado + bonus}**")
 
+# função para rolar os dados de resistencia com os buffs e base_resistencia
 @bot.tree.command(name='resistencia', description='Rola resistência com bônus de buffs')
 async def res(interaction: discord.Interaction):
     uid = str(interaction.user.id)
@@ -212,6 +226,33 @@ async def res(interaction: discord.Interaction):
     bonus = sum(b['bonus'] for b in char['buffs'] if b['tipo'] == 'resistencia') + char.get('base_resistencia', 0)
     await interaction.response.send_message(f"🛡️ **{char['nome']}**: {dado} + {bonus} = **{dado + bonus}**")
 
+# Função para salvar os bônus dos personagens base 
+@bot.tree.command(name='definir_base', description='Define os Bônus bases de ataque e resistencia.')
+async def bon(interaction: discord.Interaction, ataque: int, resistencia: int):
+    uid = str(interaction.user.id)
+    char_n = data.get("players", {}).get(uid, {}).get('active_character')
+    if not char_n:
+        return await interaction.response.send_message("❌ Nenhum personagem ativo.", ephemeral=True)
+    data["player"][uid][char_n].update({
+        'base_ataque': ataque,
+        'base_resistencia': resistencia,
+    })
+    save_data(data)
+    await interaction.response.send_message(f"Seus Bônus de Ataque e Resistencia para o {char_n} foram salvos.✅​")
+
+@bot.tree.command(name='status', description='mostra uma review geral do seu personagem')     
+async def sta(interaction: discord.Interaction):
+    uid = str(interaction.user.id)
+    char_n = data.get("players", {}).get(uid, {}).get('active_character')
+    if not char_n:
+        return await interaction.response.send_message("❌ Nenhum personagem ativo.", ephemeral=True)
+    char = data["players"][uid][char_n]
+    buffs_ativos = [b['nome'] for b in char['buffs']] or ['nenhum']
+    await interaction.response.send_message(
+        f"PERSONAGEM: {char_n}\n"
+        f"TA base: {char['base_ataque']} | TR base: {char['base_resistencia']}\n"
+        f"Efeitos ativos: {', '.join(buffs_ativos)}"
+    )
 # --- INICIAR ---
 if not DISCORD_BOT_TOKEN:
     print("❌ DISCORD_BOT_TOKEN não encontrado! Verifique o arquivo .env")
