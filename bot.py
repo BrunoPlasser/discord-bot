@@ -240,6 +240,7 @@ async def bon(interaction: discord.Interaction, ataque: int, resistencia: int):
     save_data(data)
     await interaction.response.send_message(f"Seus Bônus de Ataque e Resistencia para o {char_n} foram salvos.✅​")
 
+#F  Função
 @bot.tree.command(name='status', description='mostra uma review geral do seu personagem')     
 async def sta(interaction: discord.Interaction):
     uid = str(interaction.user.id)
